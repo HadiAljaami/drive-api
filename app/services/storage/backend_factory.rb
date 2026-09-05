@@ -1,3 +1,4 @@
+# app/services/storage/backend_factory.rb
 module Storage
   class BackendFactory
     def self.build(name = ENV.fetch("STORAGE_BACKEND", "database"))
@@ -7,11 +8,7 @@ module Storage
       when "local"
         Backends::LocalBackend.new
       else
-        raise ApiError.new(
-          code: "unsupported_storage_backend",
-          message: "Unsupported storage backend.",
-          status: :internal_server_error
-        )
+        raise ApplicationErrors.unsupported_storage_backend
       end
     end
   end

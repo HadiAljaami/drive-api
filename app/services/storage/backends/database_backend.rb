@@ -1,7 +1,10 @@
-# app/services/storage/backends/database_backend.rb
 module Storage
   module Backends
     class DatabaseBackend
+      def name
+        "database"
+      end
+
       def put(blob:, data:)
         blob.create_database_storage_blob!(data: data)
       end
@@ -13,11 +16,7 @@ module Storage
       private
 
       def raise_not_found
-        raise ApiError.new(
-          code: "blob_data_not_found",
-          message: "Blob data was not found in database storage.",
-          status: :internal_server_error
-        )
+        raise ApplicationErrors.blob_data_not_found(backend: name)
       end
     end
   end

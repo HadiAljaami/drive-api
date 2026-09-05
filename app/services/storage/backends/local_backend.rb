@@ -8,6 +8,10 @@ module Storage
         @root_path = Pathname.new(root_path)
       end
 
+      def name
+        "local"
+      end
+
       def put(blob:, data:)
         FileUtils.mkdir_p(path_for(blob).dirname)
         File.binwrite(path_for(blob), data)
@@ -31,11 +35,7 @@ module Storage
       end
 
       def raise_not_found
-        raise ApiError.new(
-          code: "blob_data_not_found",
-          message: "Blob data was not found in local storage.",
-          status: :internal_server_error
-        )
+        raise ApplicationErrors.blob_data_not_found(backend: name)
       end
     end
   end

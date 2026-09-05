@@ -7,7 +7,8 @@ module Blobs
     end
 
     def call(external_id:)
-      raise missing_id if external_id.blank?
+      raise ApplicationErrors.invalid_id unless external_id.is_a?(String)
+      raise ApplicationErrors.missing_id if external_id.blank?
 
       blob = Blob.find_by!(external_id: external_id)
       data = storage_backend_factory.build(blob.storage_backend).get(blob: blob)
@@ -23,13 +24,5 @@ module Blobs
     private
 
     attr_reader :storage_backend_factory
-
-    def missing_id
-      ApiError.new(
-        code: "missing_id",
-        message: "ID is required.",
-        status: :bad_request
-      )
-    end
   end
 end
