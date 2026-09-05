@@ -1,4 +1,3 @@
-# app/services/storage/backend_factory.rb
 module Storage
   class BackendFactory
     def self.build(name = ENV.fetch("STORAGE_BACKEND", "database"))
@@ -7,6 +6,8 @@ module Storage
         Backends::DatabaseBackend.new
       when "local"
         Backends::LocalBackend.new
+      when "s3"
+        Backends::S3HttpBackend.new
       else
         raise ApplicationErrors.unsupported_storage_backend
       end

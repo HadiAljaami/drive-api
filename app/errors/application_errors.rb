@@ -52,4 +52,9 @@ module ApplicationErrors
       message: "Blob data was not found in #{backend} storage."
     )
   end
+
+  def storage_error(message: "Storage backend failed.")
+    ApplicationError.new(code: "storage_error", message: message)
+  end
+  
 end
