@@ -1,24 +1,304 @@
-# README
+@'
+# Simple Drive
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Ruby on Rails API for storing and retrieving binary blobs through one stable interface with configurable storage backends.
 
-Things you may want to cover:
+This project was built for the Moyasar Hiring: Simple Drive assignment.
 
-* Ruby version
+## Features
 
-* System dependencies
+- Rails API-only application.
+- PostgreSQL database.
+- Bearer token authentication.
+- Store blobs with `POST /v1/blobs`.
+- Retrieve blobs with `GET /v1/blobs/*id`.
+- Supports path-like IDs such as `folder/file.txt`.
+- Strict Base64 validation.
+- Consistent JSON error responses.
+- Pluggable storage backends:
+  - Database table
+  - Local filesystem
+  - S3-compatible storage through raw HTTP
+- S3 implementation does not use any S3 SDK or S3 library.
+- RSpec coverage for API, services, models, and storage adapters.
 
-* Configuration
+## Architecture
 
-* Database creation
+The application keeps controllers thin and moves business workflow into use-case services.
 
-* Database initialization
+```text
+Controller
+  -> Use Case Service
+    -> Storage Backend Contract
+      -> Database / Local / S3 HTTP
+```
 
-* How to run the test suite
+The storage backend contract is intentionally small:
 
-* Services (job queues, cache servers, search engines, etc.)
+```ruby
+name
+put(blob:, data:)
+get(blob:)
+```
 
-* Deployment instructions
+Main components:
 
-* ...
+```text
+app/controllers/v1/blobs_controller.rb
+app/controllers/concerns/bearer_authentication.rb
+app/controllers/concerns/error_rendering.rb
+
+app/errors/application_error.rb
+app/errors/application_errors.rb
+
+app/services/blobs/create_blob.rb
+app/services/blobs/retrieve_blob.rb
+
+app/services/storage/backend_factory.rb
+app/services/storage/backends/database_backend.rb
+app/services/storage/backends/local_backend.rb
+app/services/storage/backends/s3_http_backend.rb
+
+app/services/storage/s3/configuration.rb
+app/services/storage/s3/object_key.rb
+app/services/storage/s3/signer.rb
+app/services/storage/s3/http_client.rb
+```
+
+## Design Decisions
+
+The public blob `id` is treated as opaque. It may be a UUID, random string, name, or path-like value. Storage adapters do not use it directly as a file path or S3 object key.
+
+For file-based storage, the app derives a safe SHA256-based key:
+
+```text
+blobs/44/44543f2cdf9e47...
+```
+
+This avoids path traversal, encoding issues, platform-specific filename issues, and very large single directories.
+
+S3 storage is implemented using Ruby HTTP primitives and AWS Signature Version 4. This follows the assignment requirement to avoid S3 libraries while keeping protocol details isolated from the blob use cases.
+
+More details are documented in:
+
+- `docs/project-spec.md`
+- `docs/decision-log.md`
+
+## Requirements
+
+- Ruby
+- Rails
+- PostgreSQL
+- Bundler
+
+## Setup
+
+Install dependencies:
+
+```bash
+bundle install
+```
+
+Create and migrate the database:
+
+```bash
+bundle exec rails db:create
+bundle exec rails db:migrate
+```
+
+Prepare the test database:
+
+```bash
+bundle exec rails db:test:prepare
+```
+
+## Configuration
+
+Create local environment variables based on `.env.example`.
+
+For Windows `cmd`:
+
+```cmd
+set API_AUTH_TOKEN=dev-token
+set STORAGE_BACKEND=database
+```
+
+For PowerShell:
+
+```powershell
+$env:API_AUTH_TOKEN="dev-token"
+$env:STORAGE_BACKEND="database"
+```
+
+Supported storage backends:
+
+```text
+database
+local
+s3
+```
+
+### Database Backend
+
+```text
+STORAGE_BACKEND=database
+```
+
+Stores raw blob bytes in the `database_storage_blobs` table.
+
+### Local Backend
+
+```text
+STORAGE_BACKEND=local
+LOCAL_STORAGE_PATH=storage/blobs
+```
+
+Stores raw blob bytes on the local filesystem using safe SHA256-derived paths.
+
+### S3 Backend
+
+```text
+STORAGE_BACKEND=s3
+S3_ENDPOINT=http://localhost:9000
+S3_REGION=us-east-1
+S3_BUCKET=drive
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+```
+
+The S3 backend uses raw HTTP requests with AWS Signature Version 4.
+
+## Run The Server
+
+```bash
+bundle exec rails server
+```
+
+The API will be available at:
+
+```text
+http://localhost:3000
+```
+
+## API
+
+All requests require:
+
+```http
+Authorization: Bearer <token>
+```
+
+### Store Blob
+
+```http
+POST /v1/blobs
+Content-Type: application/json
+Authorization: Bearer dev-token
+```
+
+Request:
+
+```json
+{
+  "id": "folder/hello.txt",
+  "data": "SGVsbG8="
+}
+```
+
+Response:
+
+```json
+{
+  "id": "folder/hello.txt",
+  "size": 5,
+  "created_at": "2026-09-05T14:31:03Z"
+}
+```
+
+### Retrieve Blob
+
+```http
+GET /v1/blobs/folder/hello.txt
+Authorization: Bearer dev-token
+```
+
+Response:
+
+```json
+{
+  "id": "folder/hello.txt",
+  "data": "SGVsbG8=",
+  "size": 5,
+  "created_at": "2026-09-05T14:31:03Z"
+}
+```
+
+## Curl Examples
+
+Create a blob on Windows `cmd`:
+
+```cmd
+curl.exe -i -X POST http://localhost:3000/v1/blobs -H "Authorization: Bearer dev-token" -H "Content-Type: application/json" -d "{\"id\":\"api/demo.txt\",\"data\":\"SGVsbG8=\"}"
+```
+
+Retrieve a blob on Windows `cmd`:
+
+```cmd
+curl.exe -i http://localhost:3000/v1/blobs/api/demo.txt -H "Authorization: Bearer dev-token"
+```
+
+## Error Format
+
+All API errors use the same shape:
+
+```json
+{
+  "error": {
+    "code": "invalid_base64",
+    "message": "Data must be a valid Base64-encoded string."
+  }
+}
+```
+
+Common error codes:
+
+```text
+invalid_json
+invalid_id
+missing_id
+invalid_data
+missing_data
+invalid_base64
+unauthorized
+blob_not_found
+blob_already_exists
+unsupported_storage_backend
+blob_data_not_found
+storage_error
+```
+
+## Testing
+
+Run all tests:
+
+```bash
+bundle exec rspec
+```
+
+Current coverage includes:
+
+- Model validations.
+- Bearer authentication.
+- Create blob API.
+- Retrieve blob API.
+- Path-like blob IDs.
+- Invalid Base64.
+- Duplicate IDs.
+- Missing blobs.
+- Backend factory.
+- Database backend.
+- Local backend.
+- S3 configuration.
+- S3 object key derivation.
+- S3 Signature V4 headers.
+- S3 HTTP PUT/GET behavior using WebMock.
