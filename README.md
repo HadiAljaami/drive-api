@@ -1,4 +1,3 @@
-@'
 # Simple Drive
 
 Ruby on Rails API for storing and retrieving binary blobs through one stable interface with configurable storage backends.
@@ -24,16 +23,24 @@ This project was built for the Moyasar Hiring: Simple Drive assignment.
 
 ## Architecture
 
-The application keeps controllers thin and moves business workflow into use-case services.
+The application is structured around a small storage abstraction. Controllers handle HTTP concerns, use-case services handle application workflow, and storage backends handle the physical storage details.
+
+### Request Flow
 
 ```text
-Controller
-  -> Use Case Service
-    -> Storage Backend Contract
-      -> Database / Local / S3 HTTP
+HTTP Request
+  -> V1::BlobsController
+  -> Blobs::CreateBlob / Blobs::RetrieveBlob
+  -> Storage::BackendFactory
+  -> Storage Backend
+       - DatabaseBackend
+       - LocalBackend
+       - S3HttpBackend
 ```
 
-The storage backend contract is intentionally small:
+### Storage Contract
+
+Every storage backend implements the same small contract:
 
 ```ruby
 name
@@ -41,7 +48,9 @@ put(blob:, data:)
 get(blob:)
 ```
 
-Main components:
+This keeps the blob use cases independent from the selected storage backend. Adding a new backend should not require changing the controller or the blob services.
+
+### Project Structure
 
 ```text
 app/
@@ -81,6 +90,18 @@ app/
         signer.rb
 ```
 
+### Responsibilities
+
+- `V1::BlobsController`: receives requests and renders JSON responses.
+- `Blobs::CreateBlob`: validates input, decodes Base64 data, creates metadata, and stores bytes through the selected backend.
+- `Blobs::RetrieveBlob`: loads metadata, reads bytes from the original backend, and returns the API response payload.
+- `Storage::BackendFactory`: selects the configured backend.
+- `DatabaseBackend`: stores bytes in `database_storage_blobs`.
+- `LocalBackend`: stores bytes on disk using safe SHA256-derived paths.
+- `S3HttpBackend`: stores bytes in S3-compatible storage using raw HTTP and AWS Signature Version 4.
+- `ApplicationErrors`: centralizes application error codes and messages.
+- `ErrorRendering`: maps application errors to HTTP statuses and a consistent JSON error format.
+
 ## Design Decisions
 
 The public blob `id` is treated as opaque. It may be a UUID, random string, name, or path-like value. Storage adapters do not use it directly as a file path or S3 object key.
@@ -99,6 +120,7 @@ More details are documented in:
 
 - `docs/project-spec.md`
 - `docs/decision-log.md`
+- `docs/manual-test-scenarios.md`
 
 ## Requirements
 
