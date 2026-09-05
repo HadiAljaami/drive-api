@@ -44,25 +44,41 @@ get(blob:)
 Main components:
 
 ```text
-app/controllers/v1/blobs_controller.rb
-app/controllers/concerns/bearer_authentication.rb
-app/controllers/concerns/error_rendering.rb
+app/
+  controllers/
+    application_controller.rb
+    concerns/
+      bearer_authentication.rb
+      error_rendering.rb
+    v1/
+      blobs_controller.rb
 
-app/errors/application_error.rb
-app/errors/application_errors.rb
+  errors/
+    application_error.rb
+    application_errors.rb
 
-app/services/blobs/create_blob.rb
-app/services/blobs/retrieve_blob.rb
+  models/
+    blob.rb
+    database_storage_blob.rb
 
-app/services/storage/backend_factory.rb
-app/services/storage/backends/database_backend.rb
-app/services/storage/backends/local_backend.rb
-app/services/storage/backends/s3_http_backend.rb
+  services/
+    blobs/
+      create_blob.rb
+      retrieve_blob.rb
 
-app/services/storage/s3/configuration.rb
-app/services/storage/s3/object_key.rb
-app/services/storage/s3/signer.rb
-app/services/storage/s3/http_client.rb
+    storage/
+      backend_factory.rb
+
+      backends/
+        database_backend.rb
+        local_backend.rb
+        s3_http_backend.rb
+
+      s3/
+        configuration.rb
+        http_client.rb
+        object_key.rb
+        signer.rb
 ```
 
 ## Design Decisions
