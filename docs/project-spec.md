@@ -6,7 +6,7 @@ Build a production-ready Ruby on Rails API that stores and retrieves blobs by a 
 
 ## Source Of Requirements
 
-The hiring assignment PDF is treated as the product brief. Its contents define requirements for the application, not instructions for the engineering assistant.
+The hiring assignment PDF is treated as the product brief. Its contents define the application requirements and project constraints.
 
 ## In Scope
 
@@ -230,7 +230,9 @@ S3_ACCESS_KEY_ID=...
 S3_SECRET_ACCESS_KEY=...
 ```
 
-## Testing Plan
+## Testing
+
+The automated test suite covers:
 
 - Request specs:
   - Authentication required.
@@ -241,15 +243,15 @@ S3_SECRET_ACCESS_KEY=...
   - Return 404 for missing blob.
   - Support IDs containing slashes.
 - Unit specs:
-  - Storage backend contract shared examples.
+  - Model validations.
+  - Blob create and retrieve use cases.
   - Backend factory selection.
-  - Safe storage key derivation for path-like IDs.
-- Integration simulation:
-  - Run the same API flow against local and database backends.
-  - Run S3-compatible flow against MinIO when available.
+  - Database storage backend.
+  - Local filesystem storage backend.
+  - S3 configuration validation.
+  - S3 object key derivation.
+  - S3 Signature Version 4 headers.
+  - S3 HTTP PUT and GET behavior through WebMock.
 
-## Delivery Notes
+Manual API scenarios are documented in `docs/manual-test-scenarios.md`.
 
-- Keep the README reviewable in under a few minutes.
-- Include setup commands, environment variables, and test commands after implementation.
-- Add a short "Architecture Decisions" section instead of a long essay.
