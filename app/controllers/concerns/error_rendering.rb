@@ -1,3 +1,5 @@
+# Centralizes API error handling so all endpoints return
+# a consistent error response structure.
 module ErrorRendering
   extend ActiveSupport::Concern
 

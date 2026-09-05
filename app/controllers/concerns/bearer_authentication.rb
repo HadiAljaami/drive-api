@@ -1,4 +1,5 @@
-# app/controllers/concerns/bearer_authentication.rb
+# Provides Bearer token authentication for API requests.
+# Authentication is applied before any controller action is executed.
 module BearerAuthentication
   extend ActiveSupport::Concern
 
@@ -9,6 +10,8 @@ module BearerAuthentication
   private
 
   def authenticate_request!
+    # The token is kept outside the source code and provided
+    # through an environment variable.
     expected_token = ENV.fetch("API_AUTH_TOKEN", "dev-token")
     provided_token = request.authorization.to_s.match(/\ABearer (.+)\z/)&.[](1)
 
