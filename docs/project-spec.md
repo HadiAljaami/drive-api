@@ -59,19 +59,34 @@ Proposed shape:
 
 ```text
 app/
-  controllers/v1/blobs_controller.rb
-  models/blob.rb
-  models/database_storage_blob.rb
-  services/blobs/create_blob.rb
-  services/blobs/retrieve_blob.rb
-  services/storage/backend_factory.rb
-  services/storage/backends/local_backend.rb
-  services/storage/backends/database_backend.rb
-  services/storage/backends/s3_http_backend.rb
-  services/storage/s3/configuration.rb
-  services/storage/s3/object_key.rb
-  services/storage/s3/signer.rb
-  services/storage/s3/http_client.rb
+├── controllers/
+│   ├── application_controller.rb
+│   ├── concerns/
+│   │   ├── bearer_authentication.rb
+│   │   └── error_rendering.rb
+│   └── v1/
+│       └── blobs_controller.rb
+├── errors/
+│   ├── application_error.rb
+│   └── application_errors.rb
+├── models/
+│   ├── blob.rb
+│   └── database_storage_blob.rb
+└── services/
+    ├── blobs/
+    │   ├── create_blob.rb
+    │   └── retrieve_blob.rb
+    └── storage/
+        ├── backend_factory.rb
+        ├── backends/
+        │   ├── database_backend.rb
+        │   ├── local_backend.rb
+        │   └── s3_http_backend.rb
+        └── s3/
+            ├── configuration.rb
+            ├── http_client.rb
+            ├── object_key.rb
+            └── signer.rb
 ```
 
 This uses Strategy for storage backends and a small Factory for backend selection. That is enough abstraction for the assignment without turning the app into a framework.
