@@ -25,7 +25,7 @@ module Blobs
     rescue ActiveRecord::RecordNotUnique
       raise ApplicationErrors.blob_already_exists
     rescue ActiveRecord::RecordInvalid => error
-      raise ApplicationErrors.blob_already_exists if error.record.errors.added?(:external_id, :taken)
+      raise ApplicationErrors.blob_already_exists if duplicate_external_id?(error)
 
       raise
     end
@@ -46,6 +46,14 @@ module Blobs
       Base64.strict_decode64(encoded_data)
     rescue ArgumentError
       raise ApplicationErrors.invalid_base64
+    end
+
+    def duplicate_external_id?(error)
+      return false unless error.record.is_a?(Blob)
+
+      error.record.errors.details
+        .fetch(:external_id, [])
+        .any? { |detail| detail[:error] == :taken }
     end
   end
 end
