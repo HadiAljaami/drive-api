@@ -55,6 +55,6 @@ gem "factory_bot_rails", "~> 6.5", groups: [:development, :test]
 
 gem "shoulda-matchers", "~> 8.0", group: :test
 
-gem "webmock", "~> 3.26", group: :test
+gem "webmock", "~> 3.34", group: :test
 
 gem "rubocop-rails", "~> 2.37", groups: [:development, :test]
